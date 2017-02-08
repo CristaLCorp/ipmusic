@@ -31,3 +31,4 @@ print("\n")
 
 dat_dict = dict(zip(liste_noms, liste_ip))
 print(dat_dict)
+
