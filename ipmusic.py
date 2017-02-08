@@ -18,15 +18,19 @@ local_ip = "192.168.2.0/24"
 #network_mask = "255.255.255.0"
 i = 0
 
-print("\nPress Ctrl-C to quit\n")
+print("Press Ctrl-C to quit")
 
 
 while True:
 
 	i = i + 1
-	print("LOOP : " + str(i))
-
+	print("\n****************")
+	print("*   LOOP : " + str(i) + "   *")
+	print("****************")
+	
+	print("\nScanning Network...")
 	nmap_output = subprocess.run(["nmap", "-sn", local_ip], stdout=subprocess.PIPE)
+	print("Done")
 
 	liste_ip = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}',str(nmap_output))
 
@@ -47,6 +51,7 @@ while True:
 
 		client = udp_client.SimpleUDPClient(args.ip, args.port)
 		
+		print("\nSending to Usine...")
 		for k, v in dat_dict.items():
 			message = str("/")+str(k)+str(" ")+str(v)
 			
@@ -66,4 +71,5 @@ while True:
 			
 			#print(message)
 			time.sleep(1)
+		print("Done")
 		
