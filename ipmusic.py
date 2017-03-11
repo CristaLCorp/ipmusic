@@ -1,4 +1,7 @@
-# SHIT
+# IPMUSIC
+# By CristaL
+# V 0.2a
+# 11/03/2017
 
 
 import re
@@ -28,18 +31,39 @@ while True:
 	print("*   LOOP : " + str(i) + "   *")
 	print("****************")
 	
+	# launching nmap quick scan
 	print("\nScanning Network...")
 	nmap_output = subprocess.run(["nmap", "-sn", local_ip], stdout=subprocess.PIPE)
 	print("Done")
-
+	
+	# regex nmap output to retrieve ip addresses
 	liste_ip = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}',str(nmap_output))
+	
+	# print(liste_ip)
+	
+	# retire le premier element de la liste (le network)
+	liste_ip.pop(0)
+	
+	# compte combien de personnes sont connectées, basé sur la longueur de la liste d ip
+	nbrgens = len(liste_ip)
+	#print(nbrgens)
 
+	"""
+	# commenté jusqu a ... plus tard
+	# nmap ne retournant pas toujours le nom netbios des hosts
+	# suivant quel ordi effectue le scan
+	
+	# regex nmap output to retrieve names
 	liste_noms = re.findall(r'(?<=for\ )\w+',str(nmap_output))
+	# add "network" on top of name list
 	liste_noms.insert(0,'network')
 
+	# make a dictionnary by combining names and ips
 	dat_dict = dict(zip(liste_noms, liste_ip))
 	#print(dat_dict)
-
+	# get the total numer of connected device by getting the length of the dictionnary
+	nbrgens = len(dat_dict.items())
+	"""
 
 	if __name__ == "__main__":
 		parser = argparse.ArgumentParser()
@@ -52,24 +76,20 @@ while True:
 		client = udp_client.SimpleUDPClient(args.ip, args.port)
 		
 		print("\nSending to Usine...")
-		for k, v in dat_dict.items():
-			message = str("/")+str(k)+str(" ")+str(v)
+		
+		# envoie le nombre de personne connectées 1 fois
+		client.send_message("/NBRGENS", int(nbrgens))
+		print("\nNombre de personnes connectees : ", nbrgens, "\n")
+		
+		# for k, v in dat_dict.items():
+		for k in liste_ip:
 			
-			################################################
+			# envoie, a chaque tour de boucle, [ip] d'un client different
+			message = str(k)
+					
+			client.send_message("/IPS", message)
 			
-			# ici je ne suis pas sur de l'ordre des arguments de send_message
-			# a toi de voir ce que tu preferes recevoir dans Usine
-			# comment celle que tu n'utilise pas et tu me dira
-			
-			# 1 - la facon qu'on a testé hier
-			client.send_message(message, random.random())
-			
-			# 2 - la facon qui fait + de sens
-			#client.send_message("/NEWCOMER", message)
-			
-			#################################################
-			
-			#print(message)
-			time.sleep(1)
-		print("Done")
+			print(message)
+			time.sleep(3)
+		print("\nDone")
 		
