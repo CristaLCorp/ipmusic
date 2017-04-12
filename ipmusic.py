@@ -16,15 +16,18 @@ from pythonosc import osc_message_builder
 from pythonosc import udp_client
 
 
-#local_ip = "192.168.1.0/24"
-local_ip = "192.168.2.0/24"
-#network_mask = "255.255.255.0"
 i = 0
 
-print("Press Ctrl-C to quit")
+
+# récuperation gateway
+the_gateway = subprocess.run(["ipconfig"], stdout=subprocess.PIPE)
+m = re.findall(r'Passerelle par d\\x82faut\.\ \.\ \.\ \.\\xff\.\ \.\ \.\ \.\ \.\ :\ \d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}', str(the_gateway))
+the_gateway = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.', str(m))
+the_gateway = str(the_gateway[0])+'0/24'
 
 
 while True:
+	
 
 	i = i + 1
 	print("\n****************")
@@ -33,13 +36,11 @@ while True:
 	
 	# launching nmap quick scan
 	print("\nScanning Network...")
-	nmap_output = subprocess.run(["nmap", "-sn", local_ip], stdout=subprocess.PIPE)
+	nmap_output = subprocess.run(["nmap", "-sn", the_gateway], stdout=subprocess.PIPE)
 	print("Done")
 	
 	# regex nmap output to retrieve ip addresses
 	liste_ip = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}',str(nmap_output))
-	
-	# print(liste_ip)
 	
 	# retire le premier element de la liste (le network)
 	liste_ip.pop(0)
@@ -85,11 +86,26 @@ while True:
 		for k in liste_ip:
 			
 			# envoie, a chaque tour de boucle, [ip] d'un client different
-			message = str(k)
-					
-			client.send_message("/IPS", message)
+			print("sending ip : ", str(k))
+			client.send_message("/IPS", str(k))
 			
-			print(message)
+			# ping l ip puis envoie le ping correspondant à l ip
+			dat_ping = subprocess.run(["ping", "-n", "1", "-w", "300", k], stdout=subprocess.PIPE)
+			dat_ping = re.findall(r'temps=\d{1,3}', str(dat_ping))
+			dat_ping = re.findall(r'\d{1,3}', str(dat_ping))
+			
+			try :
+				client.send_message("/PING", dat_ping[0])
+				print("ping : "+ dat_ping[0] + "ms\n")
+			except :
+				print("can't ping or < 1ms \n")
+			
+			
+			#message = str(k)
+					
+			#client.send_message("/IPS", message)
+			
+			
 			time.sleep(3)
 		print("\nDone")
 		
