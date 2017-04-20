@@ -1,13 +1,12 @@
 # IPMUSIC
 # By CristaL
-# V 0.2a
-# 11/03/2017
+# V 0.4a
+# 20/04/2017
 
 
 import re
 import subprocess
 import socket
-
 import argparse
 import random
 import time
@@ -19,11 +18,14 @@ from pythonosc import udp_client
 i = 0
 
 
-# récuperation gateway
-the_gateway = subprocess.run(["ipconfig"], stdout=subprocess.PIPE)
-m = re.findall(r'Passerelle par d\\x82faut\.\ \.\ \.\ \.\\xff\.\ \.\ \.\ \.\ \.\ :\ \d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}', str(the_gateway))
-the_gateway = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.', str(m))
-the_gateway = str(the_gateway[0])+'0/24'
+# récuperation ip & network mask
+ipconfig_output = subprocess.run(["ipconfig"], stdout=subprocess.PIPE)
+m = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}\\r\\n\ \ \ Passerelle par d\\x82faut\.\ \.\ \.\ \.\\xff\.\ \.\ \.\ \.\ \.\ :\ \d{0,3}\.\d{0,3}\.\d{0,3}\.\d{0,3}', str(ipconfig_output))
+subnet_mask = re.findall(r'255\.\d{0,3}\.\d{0,3}\.\d{0,3}', str(m))
+subnet_mask = str(subnet_mask[0])
+subnet_mask = sum([bin(int(x)).count("1") for x in subnet_mask.split(".")])
+network = re.findall(r'\d{0,3}\.\d{0,3}\.\d{0,3}\.', str(m))
+network = str(network[1]) + '0/' + str(subnet_mask)
 
 
 while True:
@@ -35,8 +37,8 @@ while True:
 	print("****************")
 	
 	# launching nmap quick scan
-	print("\nScanning Network...")
-	nmap_output = subprocess.run(["nmap", "-sn", the_gateway], stdout=subprocess.PIPE)
+	print("\nScanning Network " + network + " ...")
+	nmap_output = subprocess.run(["nmap", "-sn", network], stdout=subprocess.PIPE)
 	print("Done")
 	
 	# regex nmap output to retrieve ip addresses
@@ -47,24 +49,7 @@ while True:
 	
 	# compte combien de personnes sont connectées, basé sur la longueur de la liste d ip
 	nbrgens = len(liste_ip)
-	#print(nbrgens)
-
-	"""
-	# commenté jusqu a ... plus tard
-	# nmap ne retournant pas toujours le nom netbios des hosts
-	# suivant quel ordi effectue le scan
 	
-	# regex nmap output to retrieve names
-	liste_noms = re.findall(r'(?<=for\ )\w+',str(nmap_output))
-	# add "network" on top of name list
-	liste_noms.insert(0,'network')
-
-	# make a dictionnary by combining names and ips
-	dat_dict = dict(zip(liste_noms, liste_ip))
-	#print(dat_dict)
-	# get the total numer of connected device by getting the length of the dictionnary
-	nbrgens = len(dat_dict.items())
-	"""
 
 	if __name__ == "__main__":
 		parser = argparse.ArgumentParser()
@@ -109,3 +94,21 @@ while True:
 			time.sleep(3)
 		print("\nDone")
 		
+		
+		
+"""
+	# commenté jusqu a ... plus tard
+	# nmap ne retournant pas toujours le nom netbios des hosts
+	# suivant quel ordi effectue le scan
+	
+	# regex nmap output to retrieve names
+	liste_noms = re.findall(r'(?<=for\ )\w+',str(nmap_output))
+	# add "network" on top of name list
+	liste_noms.insert(0,'network')
+
+	# make a dictionnary by combining names and ips
+	dat_dict = dict(zip(liste_noms, liste_ip))
+	#print(dat_dict)
+	# get the total numer of connected device by getting the length of the dictionnary
+	nbrgens = len(dat_dict.items())
+	"""
